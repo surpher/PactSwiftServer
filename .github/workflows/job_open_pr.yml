@@ -1,0 +1,45 @@
+name: "Open a PR"
+
+on:
+  workflow_call:
+    secrets:
+      PR_PAT:
+        required: true
+    inputs:
+      release-version:
+        required: true
+        type: string
+
+jobs:
+  create-pull-request:
+    name: "⛴️  Preapare changes"
+    runs-on: macos-14
+    permissions:
+      id-token: write
+
+    steps:
+      - name: "♻️ Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🛬  Add new XCFramework"
+        uses: actions/download-artifact@v4
+        with:
+          name: XCFramework
+          path: Framework
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: "🔏  Setup git sign"
+        uses: chainguard-dev/actions/setup-gitsign@main
+
+      - name: "🍾  Open a PR"
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: "${{ secrets.PR_PAT }}"
+          branch: release/candidate
+          branch-suffix: short-commit-hash
+          delete-branch: true
+          base: main
+          title: "[RELEASE] ${{ inputs.release-version }}"
+          commit-message: "Automated change: Updated version of XCFramework."
+          draft: true

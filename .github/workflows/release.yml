@@ -1,0 +1,22 @@
+name: "Release"
+
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "🚀  Release new version"
+        uses: ncipollo/release-action@v1
+        with:
+          skipIfReleaseExists: true
+          draft: true

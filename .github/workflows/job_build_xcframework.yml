@@ -1,0 +1,67 @@
+name: "Build XCFramework"
+
+on:
+  workflow_call:
+    inputs:
+      repo-owner:
+        required: true
+        type: string
+      repo-name:
+        required: true
+        type: string
+
+env:
+  XCFRAMEWORK: "PactSwiftMockServer.xcframework"
+  CHECKSUM: "checksum"
+  RESOURCES: Resources
+
+jobs:
+  buildXCFramework:
+    name: "🚧  Build XCFramework"
+    runs-on: macos-14
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+
+    steps:
+      - name: "♻️ Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🧑‍🤝‍🧑 Clone ${{ inputs.repo-name }}/${{ inputs.repo-name }}"
+        uses: GuillaumeFalourd/clone-github-repo-action@v2.1
+        with:
+          depth: 1
+          owner: ${{ inputs.repo-owner }}
+          repository: ${{ inputs.repo-name }}
+
+      - name: "🧹  Remove ${{ env.RESOURCES }} folder"
+        id: removeResourcesFolder
+        run: |
+          rm -fr ${{ inputs.repo-name }}/${{ env.RESOURCES }}
+
+      - name: "🛬  Download Resources folder"
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.RESOURCES }}
+          path: ${{ inputs.repo-name }}/Resources
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: "🛠️  Build XCFramework"
+        run: |
+          cd ${{ inputs.repo-name }}
+          sh ../Scripts/build_xcframework
+          echo "🚚  Move ${{ env.XCFRAMEWORK }} one level up..."
+          mv ${{ env.XCFRAMEWORK }} ../
+
+      - name: "🕵️  Calculate checksum(s)"
+        run: |
+          find ./${{ env.XCFRAMEWORK }} -type f -not -name "*.sha256" -print0 | xargs -0 shasum -a 256 > ${{ env.XCFRAMEWORK }}.sha256
+
+      - name: "🛫  Upload artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: XCFramework
+          path: |
+            ${{ env.XCFRAMEWORK }}/
+            ${{ env.XCFRAMEWORK }}.sha256

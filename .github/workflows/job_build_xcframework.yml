@@ -9,6 +9,9 @@ on:
       repo-name:
         required: true
         type: string
+      commit-sha:
+        required: false
+        type: string
       release-version:
         required: true
         type: string
@@ -19,7 +22,7 @@ env:
   RESOURCES: Resources
 
 jobs:
-  buildXCFramework:
+  build-xcframework:
     name: "🚧  Build XCFramework"
     runs-on: macos-14
     timeout-minutes: 10
@@ -33,7 +36,6 @@ jobs:
       - name: "🧑‍🤝‍🧑 Clone ${{ inputs.repo-name }}/${{ inputs.repo-name }}"
         uses: GuillaumeFalourd/clone-github-repo-action@v2.1
         with:
-          depth: 1
           owner: ${{ inputs.repo-owner }}
           repository: ${{ inputs.repo-name }}
 

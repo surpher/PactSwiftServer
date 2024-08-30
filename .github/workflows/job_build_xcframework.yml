@@ -1,4 +1,4 @@
-name: "Build XCFramework"
+name: ":: build XCFramework"
 
 on:
   workflow_call:
@@ -7,6 +7,9 @@ on:
         required: true
         type: string
       repo-name:
+        required: true
+        type: string
+      release-version:
         required: true
         type: string
 
@@ -24,7 +27,7 @@ jobs:
       fail-fast: true
 
     steps:
-      - name: "♻️ Checkout repository"
+      - name: "♻️ Checkout"
         uses: actions/checkout@v4
 
       - name: "🧑‍🤝‍🧑 Clone ${{ inputs.repo-name }}/${{ inputs.repo-name }}"
@@ -33,6 +36,10 @@ jobs:
           depth: 1
           owner: ${{ inputs.repo-owner }}
           repository: ${{ inputs.repo-name }}
+
+      - name: "📝  Generate changelog"
+        run: |
+          sh Scripts/generate_changelog ${{ inputs.release-version }}
 
       - name: "🧹  Remove ${{ env.RESOURCES }} folder"
         id: removeResourcesFolder
@@ -65,3 +72,11 @@ jobs:
           path: |
             ${{ env.XCFRAMEWORK }}/
             ${{ env.XCFRAMEWORK }}.sha256
+
+      - name: "🛫  Upload CHANGELOG"
+        uses: actions/upload-artifact@v4
+        with:
+          name: Changelog
+          path: |
+            CHANGELOG.md
+            CHANGELOG.current

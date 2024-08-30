@@ -1,4 +1,4 @@
-name: "Build Pact FFI"
+name: ":: build Pact FFI"
 
 on:
   workflow_call:
@@ -19,7 +19,7 @@ jobs:
       fail-fast: true
 
     steps:
-      - name: "♻️ Checkout repository"
+      - name: "♻️ Checkout"
         uses: actions/checkout@v4
 
       - name: "♼ Cache rust binaries"

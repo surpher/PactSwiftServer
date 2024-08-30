@@ -23,6 +23,7 @@ source "$SOURCE_DIR/utils.sh"
 source "$SOURCE_DIR/config.sh"
 
 # Properties
+COMMIT_SHA=${1:-}
 TMP_DIR="./.tmp/build-xcframework"
 
 # Only use xcbeautify if it can be found in path.
@@ -40,16 +41,32 @@ check_xcode
 
 # Setup
 
-echo "ℹ️  Looking for ${PRODUCT_NAME}.xcodeproj"
-if [ ! -d "${PRODUCT_NAME}.xcodeproj" ]; then
-    echo "🚨 Run this in the same folder as \"${PRODUCT_NAME}.xcodeproj\"."
-    exit 1
+# Git checkout the specific commit given SHA
+if [ -v "$COMMIT_SHA" ]; then
+  echo "ℹ️  No commit SHA provided. Using latest commit..."
+  git log -1 --pretty=format:"%H %s"
+else
+  echo "ℹ️  Checking out commit with SHA: $COMMIT_SHA"
+  git checkout "$COMMIT_SHA"
 fi
 
-echo "ℹ️  Removing existing XCFramework"
-rm -fr "./${PRODUCT_NAME}.xcframework"
-echo "👍  Removed existing ${PRODUCT_NAME}.xcframework"
+# Check if we're in the right folder
+echo "ℹ️  Looking for ${PRODUCT_NAME}.xcodeproj"
+if [ ! -d "${PRODUCT_NAME}.xcodeproj" ]; then
+  echo "🚨 Run this in the same folder as \"${PRODUCT_NAME}.xcodeproj\"."
+  exit 1
+else
+  echo "👍 All seems as it should..."
+fi
 
+# Clean-up the existing XCFramework
+if [ -d "./${PRODUCT_NAME}.xcframework" ]; then
+  echo "ℹ️  Removing existing XCFramework"
+  rm -fr "./${PRODUCT_NAME}.xcframework"
+  echo "👍  Removed existing ${PRODUCT_NAME}.xcframework"
+fi
+
+# Preapre the temp folder
 echo "ℹ️  Preparing '${TMP_DIR}' folder"
 mkdir -p $TMP_DIR
 rm -fr $TMP_DIR
@@ -58,47 +75,47 @@ rm -fr $TMP_DIR
 
 echo "🏗  Building for iOS..."
 xcodebuild archive \
-    -sdk iphoneos IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} \
-    -arch arm64 \
-    -scheme "${PRODUCT_NAME}-iphoneos" \
-    -archivePath "${TMP_DIR}/iphoneos/${PRODUCT_NAME}.xcarchive" \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
-    SKIP_INSTALL=NO | ${XCBEAUTIFY}
-
+  -sdk iphoneos IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} \
+  -arch arm64 \
+  -scheme "${PRODUCT_NAME}-iphoneos" \
+  -archivePath "${TMP_DIR}/iphoneos/${PRODUCT_NAME}.xcarchive" \
+  BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+  SKIP_INSTALL=NO | ${XCBEAUTIFY}
 echo "👍  Framework for arm64 device built"
 
 echo "🏗  Building for iOS Simulator..."
 xcodebuild archive \
-    -sdk iphonesimulator IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} \
-    -arch x86_64 -arch arm64 \
-    -scheme "${PRODUCT_NAME}-iOS" \
-    -archivePath "${TMP_DIR}/iphonesimulator/${PRODUCT_NAME}.xcarchive" \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
-    SKIP_INSTALL=NO | ${XCBEAUTIFY}
+  -sdk iphonesimulator IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET} \
+  -arch x86_64 -arch arm64 \
+  -scheme "${PRODUCT_NAME}-iOS" \
+  -archivePath "${TMP_DIR}/iphonesimulator/${PRODUCT_NAME}.xcarchive" \
+  BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+  SKIP_INSTALL=NO | ${XCBEAUTIFY}
 echo "👍  Framework for iOS Simulator built for x86_64 and arm64 architecture"
 
 # macOS
 
 echo "🏗  Building for macOS..."
 xcodebuild archive \
-    -sdk macosx MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} \
-    -arch x86_64 -arch arm64 \
-    -scheme "${PRODUCT_NAME}-macOS" \
-    -archivePath "${TMP_DIR}/macos/${PRODUCT_NAME}.xcarchive" \
-    BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
-    SKIP_INSTALL=NO | ${XCBEAUTIFY}
+  -sdk macosx MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} \
+  -arch x86_64 -arch arm64 \
+  -scheme "${PRODUCT_NAME}-macOS" \
+  -archivePath "${TMP_DIR}/macos/${PRODUCT_NAME}.xcarchive" \
+  BUILD_LIBRARY_FOR_DISTRIBUTION=YES \
+  SKIP_INSTALL=NO | ${XCBEAUTIFY}
 echo "👍  Framework for macOS built for x86_64 and arm64 architectures"
 
 # XCFramework
 
 echo "🏗  Building XCFramework..."
-xcodebuild -create-xcframework -output ./$PRODUCT_NAME.xcframework \
-    -framework $TMP_DIR/iphoneos/$PRODUCT_NAME.xcarchive/Products/Library/Frameworks/$PRODUCT_NAME.framework \
-    -framework $TMP_DIR/iphonesimulator/$PRODUCT_NAME.xcarchive/Products/Library/Frameworks/$PRODUCT_NAME.framework \
-    -framework $TMP_DIR/macos/$PRODUCT_NAME.xcarchive/Products/Library/Frameworks/$PRODUCT_NAME.framework
+xcodebuild -create-xcframework -output "./$PRODUCT_NAME.xcframework" \
+  -framework "$TMP_DIR/iphoneos/$PRODUCT_NAME.xcarchive/Products/Library/Frameworks/$PRODUCT_NAME.framework" \
+  -framework "$TMP_DIR/iphonesimulator/$PRODUCT_NAME.xcarchive/Products/Library/Frameworks/$PRODUCT_NAME.framework" \
+  -framework "$TMP_DIR/macos/$PRODUCT_NAME.xcarchive/Products/Library/Frameworks/$PRODUCT_NAME.framework"
+echo "👍  XCFramework built"
 
 # Cleanup
-echo "ℹ️  Removing $TMP_DIR folder..."
+echo "ℹ️  Removing '$TMP_DIR' folder..."
 rm -fr $TMP_DIR
 
 echo "🎉 Done!"

@@ -1,0 +1,7 @@
+
+# SC1091 - Not following: (error message here)
+external-sources=true
+
+# Separate all disabled rules using comma (eg: "SCXYZ, SCYZW")
+# SC2034 - Unused vars
+disable=SC2034

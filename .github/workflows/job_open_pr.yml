@@ -1,4 +1,4 @@
-name: "Open a PR"
+name: ":: open a PR"
 
 on:
   workflow_call:
@@ -18,7 +18,7 @@ jobs:
       id-token: write
 
     steps:
-      - name: "♻️ Checkout repository"
+      - name: "♻️ Checkout"
         uses: actions/checkout@v4
 
       - name: "🛬  Add new XCFramework"
@@ -26,6 +26,13 @@ jobs:
         with:
           name: XCFramework
           path: Framework
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: "🛬  Add changelog"
+        uses: actions/download-artifact@v4
+        with:
+          name: Changelog
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
 

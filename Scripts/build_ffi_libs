@@ -28,6 +28,8 @@ PACTSWIFTMOCKSERVER_DIR="$WORKSPACE/PactSwiftMockServer"
 LIBPACT_FFI_DIR="${PACTSWIFTMOCKSERVER_DIR}/pact-reference/rust/pact_ffi"
 LIBPACT_FFI_VERSION=$(awk 'NR==1 {print; exit}' libpact_ffi.version)
 
+COMMIT_SHA=${1:-}
+
 # "import"
 source "$SOURCE_DIR/utils.sh"
 source "$SOURCE_DIR/rust_config.sh"
@@ -54,6 +56,15 @@ else
 	echo "🚨  Rust/Cargo not installed"
 	echo -e "ERROR: 'cargo' is a required dependency.\nInstall Rust using either homebrew or follow instructions at https://www.rust-lang.org/tools/install"
  	exit 1
+fi
+
+# Git checkout the specific commit given SHA
+if [ -v "$COMMIT_SHA" ]; then
+  echo "ℹ️  No commit SHA provided. Using latest commit..."
+  git log -1 --pretty=format:"%H %s"
+else
+  echo "ℹ️  Checking out commit with SHA: $COMMIT_SHA"
+  git checkout "$COMMIT_SHA"
 fi
 
 ####################################

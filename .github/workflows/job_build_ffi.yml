@@ -3,6 +3,9 @@ name: ":: build Pact FFI"
 on:
   workflow_call:
     inputs:
+      commit-sha:
+        required: false
+        type: string
       repo-owner:
         required: true
         type: string
@@ -11,7 +14,7 @@ on:
         type: string
 
 jobs:
-  buildFFI:
+  build-ffi:
     name: "🚧  Build libpact_ffi.a"
     runs-on: macos-14
     timeout-minutes: 60
@@ -41,7 +44,6 @@ jobs:
         uses: GuillaumeFalourd/clone-github-repo-action@v2.1
         if: steps.check_files.outputs.files_exists == 'false'
         with:
-          depth: 1
           owner: ${{ inputs.repo-owner }}
           repository: ${{ inputs.repo-name }}
 
@@ -54,7 +56,7 @@ jobs:
         if: steps.check_files.outputs.files_exists == 'false'
         run: |
           cd ${{ inputs.repo-name }}
-          sh ../Scripts/build_ffi_libs
+          sh ../Scripts/build_ffi_libs ${{ inputs.commit-sha }}
 
       - name: "🛫  Upload artifacts"
         uses: actions/upload-artifact@v4

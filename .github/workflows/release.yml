@@ -1,66 +1,32 @@
-name: "Release new version"
+name: "Create a release"
 
 on:
-  workflow_dispatch:
-    inputs:
-      release-version:
-        description: "Version to release"
-        required: true
-        type: string
-        default: "0.0.0"
-
-env:
-  RUST_TARGET_PATH: pact-reference/rust/target
-  BINARIES_PATH: Resources
-  REPO_OWNER: 'surpher'
-  REPO_NAME: 'PactSwiftMockServer'
-
-concurrency:
-  group: build-ffi-binaries-${{ github.ref }}
-  cancel-in-progress: true
+  push:
+    tags:
+    - '[0-9]+.*'
 
 jobs:
-  shared-inputs:
-    name: "🧑‍🤝‍🧑  Shared env vars"
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      repo-owner: ${{ env.REPO_OWNER }}
-      repo-name: ${{ env.REPO_NAME }}
-      release-version: ${{ inputs.release-version }}
-    steps:
-      - run: echo "Just a workaround for passing envs to other jobs... ¯\_(ツ)_/¯"
-
-  build-ffi:
-    name: "🏗️  Build FFI"
-    needs: [shared-inputs]
-    uses: ./.github/workflows/job_build_ffi.yml
-    with:
-      repo-owner: ${{ needs.sharedInputs.outputs.repo-owner }}
-      repo-name: ${{ needs.sharedInputs.outputs.repo-name }}
-
-  build-xcframework:
-    name: "🧳  Build XCFramework"
-    needs: [shared-inputs, build-ffi]
-    uses: ./.github/workflows/job_build_xcframework.yml
-    with:
-      repo-owner: ${{ needs.sharedInputs.outputs.repo-owner }}
-      repo-name: ${{ needs.sharedInputs.outputs.repo-name }}
-      release-version: ${{ inputs.release-version }}
-
-  open-pull-request:
-    needs: [build-xcframework]
-    name: "📥  Open Pull Request"
-    uses: ./.github/workflows/job_open_pr.yml
-    with:
-      release-version: ${{ inputs.release-version }}
-    secrets:
-      PR_PAT: ${{ secrets.PR_PAT }}
     permissions:
-      id-token: write
+      contents: write
 
-  create-draft-release:
-    needs: [open-pull-request]
-    name: "🚀  Create a release"
-    uses: ./.github/workflows/job_release.yml
-    with:
-      release-version: ${{ inputs.release-version }}
+    steps:
+      - name: "♻️ Checkout"
+        uses: actions/checkout@v4
+
+      - name: "🔎  Get latest tag"
+        id: tags
+        run: |
+          LATEST_TAG=$(git describe --tags --match "[0-9].*" --abbrev=0 HEAD)
+          run: echo "latest=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: "🚀  Release version v${{ steps.tags.outputs.latest }}"
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: ${{ steps.tags.outputs.latest }}
+          name: "Release: v${{ steps.tags.outputs.latest }}"
+          body_path: $${{ github.workspace }}/CHANGELOG.current
+          generate_release_notes: true
+          append_body: true

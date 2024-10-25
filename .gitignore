@@ -70,6 +70,8 @@ xcuserdata/
 *.moved-aside
 *.xccheckout
 *.xcscmblueprint
+*.old
+*.tmp
 
 ## Obj-C/Swift specific
 *.hmap

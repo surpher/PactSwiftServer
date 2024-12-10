@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-
+# shellcheck disable=external-sources,SC1091
+#
 #  Created by github/surpher on 26/10/24.
 #  Copyright © 2024 github/surpher. All rights reserved.
 #  Permission to use, copy, modify, and/or distribute this software for any

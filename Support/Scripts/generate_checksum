@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# shellcheck disable=external-sources,SC1091
+#
+#  Created by github/surpher on 26/10/24.
+#  Copyright © 2024 github/surpher. All rights reserved.
+#  Permission to use, copy, modify, and/or distribute this software for any
+#  purpose with or without fee is hereby granted, provided that the above
+#  copyright notice and this permission notice appear in all copies.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+#  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+#  SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+#  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+#  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+#  IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+set -eu
+
+FRAMEWORK_NAME="PactSwiftMockServer.xcframework"
+
+### SCRIPT ###
+
+# Change directory location to 'Framework'
+cd "Framework"
+
+# Validate the .xcframework exists
+if [[ ! -d "${FRAMEWORK_NAME}" ]]; then
+  echo "❌ XCFramework '$FRAMEWORK_NAME' not found!"
+  exit 1
+fi
+
+# 🚨 `swift package compute-checksum` only works on archives
+#
+# `PactSwift` and its dependencies is OSS and as the maintainers are doing this voluntarily
+# they have no capacity to pay to host large files (archive of a xcframework is ~110MB),
+# for, usually big, corporations and enterprises to use for free.
+#
+# NEW_CHECKSUM=$(swift package compute-checksum "$FRAMEWORK_NAME")
+
+# Run md2sum on the XCFramework
+NEW_CHECKSUM=$(find "./$FRAMEWORK_NAME" -type f -not -name "*.sha256" -print0 | xargs -0 shasum -a 256 > "$FRAMEWORK_NAME.sha256")
+
+echo "$NEW_CHECKSUM" > "checksum.md"
+
+# Change directory location back to root of the project
+cd ..
